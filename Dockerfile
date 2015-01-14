@@ -1,21 +1,31 @@
 #
 # ElasticSearch Dockerfile
 #
-# https://github.com/dockerfile/elasticsearch
+# https://github.com/toxix/docker-elasticsearch
 #
 
 # Pull base image.
-FROM dockerfile/java:oracle-java7
+FROM toxix/openjdk-jre
 
 ENV ES_PKG_NAME elasticsearch-1.4.1
 
-# Install ElasticSearch.
+# Install curl to dowload the current elasticsearch
 RUN \
-  cd / && \
-  wget https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz && \
-  tar xvzf $ES_PKG_NAME.tar.gz && \
-  rm -f $ES_PKG_NAME.tar.gz && \
-  mv /$ES_PKG_NAME /elasticsearch
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends curl && \
+  apt-get clean -qq && \
+  rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Download and install elasticsearch
+RUN \
+  mkdir /elasticsearch && \
+  curl -L "https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz" | \
+  tar -xzC /elasticsearch --strip-components=1 && \
+  rm /elasticsearch/lib/sigar/*freebsd* && \
+  rm /elasticsearch/lib/sigar/*macosx* && \
+  rm /elasticsearch/lib/sigar/*solaris* && \
+  rm /elasticsearch/lib/sigar/*winnt* && \
+  rm /elasticsearch/bin/*.exe
 
 # Define mountable directories.
 VOLUME ["/data"]
